@@ -1,11 +1,22 @@
-import { Observable } from 'rxjs';
+import { Observable, AjaxResponse } from 'rxjs';
+import {map} from 'rxjs/operators';
+import 'rxjs/add/operator/map';
+import 'rxjs/add/observable/dom/ajax';
 
-var observable = Observable.create((observer: any) => {
-    observer.next('Hello World');
-    observer.next('Hello Again!');
-    observer.complete();
-    observer.next('Bye');
-});
+// var observable = Observable.create((observer: any) => {
+//     observer.next('Hello World');
+//     observer.next('Hello Again!');
+//     observer.complete();
+//     observer.next('Bye');
+// }).map((a: any)=> "this is mapped! " + a);
+//observable.map(a => "this is mapped! " + a);
+
+var observable: Observable<string> = Observable.ajax({
+    method: 'GET',
+    url: 'https://api.github.com/users?per_page=2'
+})
+// .map(ajaxResponse =>  JSON.stringify(ajaxResponse.response));
+.map(ajaxResponse =>  (ajaxResponse.response as any[]).map(a => a.id) as unknown as string);
 
 observable.subscribe(
     (x:any) => logItem(x),
@@ -19,3 +30,4 @@ function logItem(val:any) {
     node.appendChild(textnode);
     document.getElementById("list").appendChild(node);
 }
+
