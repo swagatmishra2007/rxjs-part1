@@ -13,10 +13,14 @@ import 'rxjs/add/observable/dom/ajax';
 
 var observable: Observable<string> = Observable.ajax({
     method: 'GET',
-    url: 'https://api.github.com/users?per_page=2'
+    url: 'http://localhost:5000/api/redirect',
+    responseType: 'Text'
 })
 // .map(ajaxResponse =>  JSON.stringify(ajaxResponse.response));
-.map(ajaxResponse =>  (ajaxResponse.response as any[]).map(a => a.id) as unknown as string);
+// .map(ajaxResponse =>  (ajaxResponse.response as any[]).map(a => a.id) as unknown as string);
+.map(ajaxResponse => {
+    console.log(ajaxResponse);
+    return ajaxResponse.response as string});
 
 observable.subscribe(
     (x:any) => logItem(x),
