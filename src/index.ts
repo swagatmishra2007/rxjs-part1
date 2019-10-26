@@ -2,6 +2,7 @@ import { Observable, AjaxResponse } from 'rxjs';
 import {map} from 'rxjs/operators';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/observable/dom/ajax';
+import {DirectLine, Activity} from './directline';
 
 // var observable = Observable.create((observer: any) => {
 //     observer.next('Hello World');
@@ -11,19 +12,30 @@ import 'rxjs/add/observable/dom/ajax';
 // }).map((a: any)=> "this is mapped! " + a);
 //observable.map(a => "this is mapped! " + a);
 
-var observable: Observable<string> = Observable.ajax({
-    method: 'GET',
-    url: 'http://localhost:5000/api/redirect',
-    responseType: 'Text'
-})
-// .map(ajaxResponse =>  JSON.stringify(ajaxResponse.response));
-// .map(ajaxResponse =>  (ajaxResponse.response as any[]).map(a => a.id) as unknown as string);
-.map(ajaxResponse => {
-    console.log(ajaxResponse);
-    return ajaxResponse.response as string});
+let directLine = new DirectLine({
+    token: 'blahblah',
+    domain: 'http://localhost:5000',
+});
 
-observable.subscribe(
-    (x:any) => logItem(x),
+// var observable: Observable<string> = Observable.ajax({
+//     method: 'GET',
+//     url: 'http://localhost:5000/api/redirect',
+//     responseType: 'Text'
+// })
+// // .map(ajaxResponse =>  JSON.stringify(ajaxResponse.response));
+// // .map(ajaxResponse =>  (ajaxResponse.response as any[]).map(a => a.id) as unknown as string);
+// .map(ajaxResponse => {
+//     console.log(ajaxResponse);
+//     return ajaxResponse.response as string});
+
+// observable.subscribe(
+//     (x:any) => logItem(x),
+//     (error: any) => logItem('Error: ' + error),
+//     () => logItem('Completed')
+// );
+
+directLine.activity$.subscribe(
+    (x:Activity) => logItem("Activity Received"),
     (error: any) => logItem('Error: ' + error),
     () => logItem('Completed')
 );
