@@ -40,6 +40,38 @@ directLine.activity$.subscribe(
     () => logItem('Completed')
 );
 
+const a = Observable.create((observer: any) => {
+    // observer.next(1);
+    // observer.error(2);
+    // setTimeout(() => observer.error(3), 10);
+    // observer.next(4);
+    observer.next(1);
+    observer.error(2);
+    observer.next(5);
+    observer.error(4);
+});
+
+
+// a
+// .retryWhen((e$: any) => {
+//     return e$.delay(100).mergeMap((e: any) => console.log(e));
+// })
+// .subscribe({
+//     next(value: any) {  logItem(value); },
+//     error(err: any) { logItem(err); }
+// })
+
+a
+.retryWhen((error$: any) => {
+    console.log('retry called')
+    return error$.mergeMap((e: any) => {
+    console.log('merge map called');
+    return e;})})
+.subscribe((x: any) => logItem(x),
+(error: any) => logItem('Error: ' + error),
+() => logItem('Completed')
+)
+
 function logItem(val:any) {
     var node = document.createElement('li');
     var textnode = document.createTextNode(val);
