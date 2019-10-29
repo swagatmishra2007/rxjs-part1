@@ -375,7 +375,7 @@ const errorFailedToConnect = new Error("failed to connect");
 
 const konsole = {
     log: (message?: any, ... optionalParams: any[]) => {
-        if (typeof window !== 'undefined' && (window as any)["botchatDebug"] && message)
+        // if (typeof window !== 'undefined' && (window as any)["botchatDebug"] && message)
             console.log(message, ... optionalParams);
     }
 }
@@ -816,13 +816,26 @@ export class DirectLine implements IBotConnection {
 
     private webSocketActivity$(): Observable<Activity> {
         return this.checkConnection()
-        .flatMap(_ =>
-            this.observableWebSocket<ActivityGroup>()
+        .flatMap(_ => {
+            console.log(Math.random());
+            return this.observableWebSocket<ActivityGroup>()
             // WebSockets can be closed by the server or the browser. In the former case we need to
             // retrieve a new streamUrl. In the latter case we could first retry with the current streamUrl,
             // but it's simpler just to always fetch a new one.
-            .retryWhen(error$ => error$.delay(this.getRetryDelay()).mergeMap(error => this.reconnectToConversation()))
-        )
+            .retryWhen(error$ => {
+                console.warn('@@@@@@@@@@@@@@@@@@@');
+                console.warn(error$);
+                return error$.delay(this.getRetryDelay()).mergeMap(error => {
+                    const id = Math.random().toString(36).substr(2, 10);
+                    console.warn('!!!!!!!!!!!!!!!!!! ' + id);
+                    console.warn(error);
+                    return this.reconnectToConversation().map(r => {
+                        console.log('reconnected! ' + id);
+                        return r;
+                    });
+                });
+            })
+        })
         .flatMap(activityGroup => this.observableFromActivityGroup(activityGroup))
     }
 
@@ -840,8 +853,10 @@ export class DirectLine implements IBotConnection {
             const ws = new WebSocket(this.streamUrl);
             let sub: Subscription;
 
+            let id = Math.random().toString(36).substr(2, 10);
+
             ws.onopen = open => {
-                konsole.log("WebSocket open", open);
+                konsole.log("WebSocket open " + id, open);
                 // Chrome is pretty bad at noticing when a WebSocket connection is broken.
                 // If we periodically ping the server with empty messages, it helps Chrome
                 // realize when connection breaks, and close the socket. We then throw an
@@ -856,7 +871,8 @@ export class DirectLine implements IBotConnection {
             }
 
             ws.onclose = close => {
-                konsole.log("WebSocket close", close);
+                (close as any).__id = id;
+                konsole.log("WebSocket close " + id, close);
                 if (sub) sub.unsubscribe();
                 subscriber.error(close);
             }
@@ -864,7 +880,8 @@ export class DirectLine implements IBotConnection {
             ws.onmessage = message => message.data && subscriber.next(JSON.parse(message.data));
 
             ws.onerror = error =>  {
-                konsole.log("WebSocket error", error);
+                (error as any).__id = id;
+                konsole.log("WebSocket error " + id, error);
                 if (sub) sub.unsubscribe();
                 subscriber.error(error);
             }
@@ -874,6 +891,9 @@ export class DirectLine implements IBotConnection {
             // When the observable is closed first (e.g. when tearing down a WebChat instance) then
             // we need to manually close the WebSocket.
             return () => {
+                console.warn('Someone is closing web socket');
+                console.trace();
+
                 if (ws.readyState === 0 || ws.readyState === 1) ws.close();
             }
         }) as Observable<T>
@@ -899,6 +919,7 @@ export class DirectLine implements IBotConnection {
             .map(_ => null)
             .retryWhen(error$ => error$
                 .mergeMap(error => {
+                    console.log('reconnect failed', error);
                     if (error.status === 403) {
                         // token has expired. We can't recover from this here, but the embedding
                         // website might eventually call reconnect() with a new token and streamUrl.
@@ -932,3 +953,32 @@ export class DirectLine implements IBotConnection {
         return `${DIRECT_LINE_VERSION} (${clientAgent})`;
     }
 }
+
+// const a = Observable.create((observer: any) => {
+//     observer.next(1);
+//     observer.error(2);
+//     observer.error(3);
+//     observer.next(4);
+// });
+
+// a.subscribe({
+//     next(value: any) { console.log(value); },
+//     error(err: any) { console.log(err); }
+// })
+
+// const a = Observable.create((observer: any) => {
+//     observer.next(1);
+//     observer.error(2);
+//     setTimeout(() => observer.error(3), 10);
+//     observer.next(4);
+// });
+
+
+// a
+// .retryWhen((e$: any) => {
+//     return e$.delay(100).mergeMap((e: any) => console.log(e));
+// })
+// .subscribe({
+//     next(value: any) { }, //console.log(value); },
+//     error(err: any) { }, //console.log(err); }
+// })
